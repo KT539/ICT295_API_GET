@@ -15,13 +15,37 @@ const db = {
     },
 
 
-    getAllActivities: async () => {
+    getAllActivities: async (limit) => {
         let con;
         try {
             //the getAllActivities function waits until the query is finished to execute
             //if there is some code after the call of this function, it will be executed without waiting the execution of this function
             con = await db.connectToDatabase();
-            const [rows] = await con.query('SELECT * FROM activities');
+            let query = 'SELECT * FROM activities';
+            if (limit) {
+                query += ' LIMIT ?';
+            }
+            const [rows] = await con.query(query, [parseInt(limit)]);
+            return rows;
+        } catch (error) {
+            console.log(error);
+            throw error;
+        } finally {
+            if (con) await db.disconnectFromDatabase(con);
+        }
+    },
+
+    getActivitiesByName: async (name, limit) => {
+        let con;
+        try {
+            con = await db.connectToDatabase();
+            let query = 'SELECT * FROM activities WHERE name = ?';
+            let params = [name];
+            if (limit) {
+                query += ' LIMIT ?';
+                params.push(parseInt(limit));
+            }
+            const [rows] = await con.query(query, params);
             return rows;
         } catch (error) {
             console.log(error);
@@ -53,7 +77,7 @@ const db = {
         try {
             con = await db.connectToDatabase();
             const [result] = await con.query(
-                'INSERT INTO activities (name, starting_date, duration) VALUES (?, ?)',
+                'INSERT INTO activities (name, starting_date, duration) VALUES (?, ?, ?)',
                 [name, starting_date, duration]);
             return {id: result.insertId, name, starting_date, duration};
         } catch (error) {

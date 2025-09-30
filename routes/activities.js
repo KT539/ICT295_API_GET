@@ -3,21 +3,31 @@ import { db }  from "../db/DB_connection.js";
 import {isValidId, isValidStarting_date, isValidDuration} from "../helper.js";
 import activities from "../db/mock-activities.js";
 
-//Code made in case of success, we do not treat here the error case (id not existing for example)
 
 const activitiesRouter = express.Router();
 
-// GET method
-activitiesRouter().get('/', async (req, res) => {
+// GET method: all activities
+activitiesRouter.get('/', async (req, res) => {
     try {
-        const activities = await db.getAllActivities();
+        const { name, limit } = req.query;
+        let activities
+        if (name) {
+            if (name.length < 3) {
+                return res.status(400).json({error: "Name parameter must be at least 3 characters long."});
+            }
+            activities = await db.getActivitiesByName(name, limit);
+        } else {
+            activities = await db.getAllActivities();
+        }
         res.json(activities);
     } catch (error) {
         res.status(500).json({error: error});
     }
 });
 
-activitiesRouter().get("/:id", async (req, res) => {
+
+// GET method: filter by ID
+activitiesRouter.get("/:id", async (req, res) => {
     try {
         const id = parseInt(req.params.id);
         if (!isValidId(id)) {
@@ -45,7 +55,7 @@ activitiesRouter.post("/", async (req, res) => {
         if (!isValidStarting_date(starting_date)) {
             res.status(400).json({ error: `Invalid starting date` });
         }
-        if (isValidDuration(duration)) {
+        if (!isValidDuration(duration)) {
             res.status(400).json({ error: `Invalid duration` });
         }
         const newActivity= await db.createActivity({id, name, starting_date, duration});
@@ -57,7 +67,7 @@ activitiesRouter.post("/", async (req, res) => {
 
 
 // PUT method
-activitiesRouter().put('/:id', async (req, res) => {
+activitiesRouter.put('/:id', async (req, res) => {
     try {
         const id = parseInt(req.params.id);
         const { name, starting_date, duration } = req.body;
@@ -75,7 +85,7 @@ activitiesRouter().put('/:id', async (req, res) => {
 
 
 // DELETE method
-activitiesRouter().delete('/:id', async (req, res) => {
+activitiesRouter.delete('/:id', async (req, res) => {
     try {
         const id = parseInt(req.params.id);
         const deletedActivity = await db.deleteActivity(id);

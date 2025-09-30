@@ -5,7 +5,7 @@ const port = 3000;
 
 app.use(express.json());
 
-app.use('/api/activities', activitiesRouter);
+app.use('/activities', activitiesRouter);
 
 app.use(({ res }) => {
 res.status(404).json(`Couldn't find the resource you were looking for. Please try another URL.`);
